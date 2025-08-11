@@ -21,7 +21,6 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.splitpaisa.core.ui.PaisaSplitTheme
-import com.splitpaisa.data.seed.SeedRepository
 import com.splitpaisa.feature.settings.SettingsViewModel
 import com.splitpaisa.feature.settings.ThemeMode
 import com.splitpaisa.navigation.Destinations
@@ -30,7 +29,6 @@ import com.splitpaisa.navigation.PaisaNavGraph
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val repository = SeedRepository(this)
         setContent {
             val settingsViewModel: SettingsViewModel = viewModel()
             val settingsState by settingsViewModel.uiState.collectAsState()
@@ -51,7 +49,6 @@ class MainActivity : ComponentActivity() {
                 ) { inner ->
                     PaisaNavGraph(
                         navController = navController,
-                        repository = repository,
                         settingsViewModel = settingsViewModel,
                         modifier = Modifier.padding(inner)
                     )
