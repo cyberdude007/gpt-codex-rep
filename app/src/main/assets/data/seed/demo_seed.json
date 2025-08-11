@@ -1,0 +1,21 @@
+{
+  "accounts": [{ "id": "wallet", "name": "Wallet", "type": "CASH" }],
+  "categories": [
+    {"id":"food","name":"Food & Drinks","kind":"EXPENSE","icon":"ic_food","color":"#FF7043"},
+    {"id":"groceries","name":"Groceries","kind":"EXPENSE","icon":"ic_grocery","color":"#66BB6A"},
+    {"id":"transport","name":"Transport","kind":"EXPENSE","icon":"ic_transport","color":"#42A5F5"},
+    {"id":"bills","name":"Bills & Utilities","kind":"EXPENSE","icon":"ic_bills","color":"#AB47BC"},
+    {"id":"entertainment","name":"Entertainment","kind":"EXPENSE","icon":"ic_entertainment","color":"#EF5350"},
+    {"id":"salary","name":"Salary","kind":"INCOME","icon":"ic_salary","color":"#26A69A"}
+  ],
+  "party": {
+    "id":"roommates",
+    "name":"Roommates",
+    "members":[{"id":"m1","name":"Meera"},{"id":"m2","name":"Ravi"},{"id":"m3","name":"Aman"}]
+  },
+  "transactions": [
+    { "id":"t1","type":"EXPENSE","title":"Dinner","amountPaise":85000,"atEpochMillis":1719859200000,"categoryId":"food","accountId":"wallet","partyId":"roommates" },
+    { "id":"t2","type":"INCOME","title":"Salary","amountPaise":7500000,"atEpochMillis":1719705600000,"categoryId":"salary","accountId":"wallet" },
+    { "id":"t3","type":"EXPENSE","title":"Groceries","amountPaise":120000,"atEpochMillis":1719964800000,"categoryId":"groceries","accountId":"wallet" }
+  ]
+}
