@@ -1,26 +1,62 @@
+# .github/workflows/android.yml
+
 name: Android CI
 on:
   pull_request:
   push:
     branches: [ main ]
+
+permissions:
+  contents: write  # needed to create releases
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "17"
-      - uses: gradle/actions/setup-gradle@v3
+
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
+
+      # Use a system Gradle since the wrapper JAR isn't in PRs
+      - name: Set up Gradle 8.9
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: 8.9
+
       - name: Lint & Unit tests
-        run: gradle :app:lint :app:testDebugUnitTest
+        run: gradle :app:lint :app:testDebugUnitTest --no-daemon --console=plain
+
       - name: Build debug APK
-        run: gradle :app:assembleDebug
-      - name: Upload APK
+        run: gradle :app:assembleDebug --no-daemon --console=plain
+
+      - name: Prepare artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          # copy all debug APKs (with or without flavors)
+          shopt -s globstar nullglob
+          cp app/build/outputs/apk/**/debug/*.apk dist/
+
+      - name: Upload APK (artifact)
         uses: actions/upload-artifact@v4
         with:
           name: paisasplit-debug-apk
-          path: app/build/outputs/**/*.apk
+          path: dist/*.apk
+
+      # Publish a prerelease on pushes to main (not on PRs)
+      - name: Publish GitHub Release
+        if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/heads/main') }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: debug-${{ github.run_id }}
+          name: "SplitPaisa Debug #${{ github.run_number }}"
+          prerelease: true
+          generate_release_notes: true
+          files: dist/*.apk

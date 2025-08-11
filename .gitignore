@@ -1,3 +1,5 @@
+# .gitignore (resolved)
+
 # IDE & local
 /.idea/
 /local.properties
@@ -9,12 +11,12 @@
 /app/build/
 /**/build/
 
-# Keep these tracked (text files):
+# Keep these tracked (text files) even if patterns above might match
 !gradlew
 !gradlew.bat
 !gradle/wrapper/gradle-wrapper.properties
 
-# Block binaries from PRs
+# Block binaries from PRs (Codex restriction)
 gradle/wrapper/gradle-wrapper.jar
 
 # Misc
