@@ -9,7 +9,10 @@ data class Transaction(
     val title: String,
     val amountPaise: Long,
     val atEpochMillis: Long,
-    val categoryId: String,
-    val accountId: String,
-    val partyId: String? = null
+    val categoryId: String? = null,
+    val accountId: String? = null,
+    val partyId: String? = null,
+    val notes: String? = null,
+    val receiptUri: String? = null,
+    val recurringMeta: String? = null
 )

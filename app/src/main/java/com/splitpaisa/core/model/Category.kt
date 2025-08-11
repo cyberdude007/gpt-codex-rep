@@ -8,5 +8,6 @@ data class Category(
     val name: String,
     val kind: TransactionType,
     val icon: String,
-    val color: String
+    val color: String,
+    val monthlyBudgetPaise: Long? = null
 )

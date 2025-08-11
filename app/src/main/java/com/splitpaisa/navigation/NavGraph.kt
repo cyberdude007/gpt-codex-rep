@@ -6,7 +6,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.splitpaisa.data.seed.SeedRepository
+import androidx.compose.ui.platform.LocalContext
 import com.splitpaisa.feature.add.AddScreen
 import com.splitpaisa.feature.add.AddViewModel
 import com.splitpaisa.feature.home.HomeScreen
@@ -21,21 +21,23 @@ import com.splitpaisa.feature.stats.StatsViewModel
 @Composable
 fun PaisaNavGraph(
     navController: NavHostController,
-    repository: SeedRepository,
     settingsViewModel: SettingsViewModel,
     modifier: Modifier = Modifier
 ) {
     NavHost(navController = navController, startDestination = Destinations.Home.route, modifier = modifier) {
         composable(Destinations.Home.route) {
-            val vm: HomeViewModel = viewModel(factory = HomeViewModel.factory(repository))
+            val context = LocalContext.current
+            val vm: HomeViewModel = viewModel(factory = HomeViewModel.factory(context))
             HomeScreen(vm, settingsViewModel)
         }
         composable(Destinations.Parties.route) {
-            val vm: PartiesViewModel = viewModel(factory = PartiesViewModel.factory(repository))
+            val context = LocalContext.current
+            val vm: PartiesViewModel = viewModel(factory = PartiesViewModel.factory(context))
             PartiesScreen(vm)
         }
         composable(Destinations.Stats.route) {
-            val vm: StatsViewModel = viewModel(factory = StatsViewModel.factory(repository))
+            val context = LocalContext.current
+            val vm: StatsViewModel = viewModel(factory = StatsViewModel.factory(context))
             StatsScreen(vm)
         }
         composable(Destinations.Settings.route) {

@@ -2,6 +2,7 @@ plugins {
   id("com.android.application") version "8.5.0"
   kotlin("android") version "1.9.23"
   kotlin("plugin.serialization") version "1.9.23"
+  kotlin("kapt") version "1.9.23"
 }
 
 android {
@@ -51,9 +52,16 @@ dependencies {
   implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.3")
   implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.3")
 
+  val roomVersion = "2.6.1"
+  implementation("androidx.room:room-runtime:$roomVersion")
+  implementation("androidx.room:room-ktx:$roomVersion")
+  kapt("androidx.room:room-compiler:$roomVersion")
+
   implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
 
   testImplementation("junit:junit:4.13.2")
+  testImplementation("androidx.test:core:1.5.0")
+  testImplementation("androidx.room:room-testing:$roomVersion")
   androidTestImplementation("androidx.test.ext:junit:1.1.5")
   androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
 }

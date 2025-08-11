@@ -15,12 +15,12 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun PartiesScreen(viewModel: PartiesViewModel) {
     val state by viewModel.uiState.collectAsState()
-    state.party?.let { party ->
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(party.name, style = MaterialTheme.typography.titleLarge)
+    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        state.parties.forEach { party ->
+            Text(party.party.name, style = MaterialTheme.typography.titleLarge)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 party.members.forEach { member ->
-                    Text(member.name)
+                    Text(member.displayName.take(1))
                 }
             }
         }
