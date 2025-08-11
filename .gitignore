@@ -1,23 +1,10 @@
-# .gitignore (resolved)
-
-# IDE & local
-/.idea/
+.gradle/
 /local.properties
-*.iml
+.idea/
+build/
+app/build/
+screenshots/
 
-# Gradle cache & build outputs
-/.gradle/
-/build/
-/app/build/
-/**/build/
-
-# Keep these tracked (text files) even if patterns above might match
-!gradlew
-!gradlew.bat
-!gradle/wrapper/gradle-wrapper.properties
-
-# Block binaries from PRs (Codex restriction)
 gradle/wrapper/gradle-wrapper.jar
-
-# Misc
-/screenshots/
+/gradlew
+/gradlew.bat
