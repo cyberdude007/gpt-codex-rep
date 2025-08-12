@@ -1,0 +1,22 @@
+syntax = "proto3";
+package com.splitpaisa.core.prefs;
+
+message Settings {
+  enum ThemeMode {
+    SYSTEM = 0;
+    LIGHT = 1;
+    DARK = 2;
+  }
+
+  ThemeMode themeMode = 1;
+  string currencyCode = 2;
+  string dateFormat = 3;
+  bool hideAmounts = 4;
+  bool appLockEnabled = 5;
+  int32 autoLockMinutes = 6;
+  int64 lastLockTimestamp = 7;
+  bool budgetAlert75 = 8;
+  bool budgetAlert100 = 9;
+  bool settleUpReminder = 10;
+  bool offlineOnly = 11;
+}
