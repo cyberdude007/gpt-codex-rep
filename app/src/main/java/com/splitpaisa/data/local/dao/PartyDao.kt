@@ -20,4 +20,10 @@ interface PartyDao {
     @Transaction
     @Query("SELECT * FROM parties")
     fun getPartiesWithMembers(): Flow<List<PartyWithMembers>>
+
+    @Query("SELECT * FROM parties WHERE LOWER(name) LIKE '%' || :needle || '%' LIMIT :limit")
+    suspend fun prefilterByName(needle: String, limit: Int): List<PartyEntity>
+
+    @Query("SELECT * FROM parties")
+    suspend fun getAllOnce(): List<PartyEntity>
 }

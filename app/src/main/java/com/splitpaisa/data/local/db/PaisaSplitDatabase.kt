@@ -24,9 +24,10 @@ import kotlinx.serialization.json.Json
         PartyEntity::class,
         PartyMemberEntity::class,
         SplitEntity::class,
-        SettlementEntity::class
+        SettlementEntity::class,
+        RecentSearchEntity::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -38,6 +39,7 @@ abstract class PaisaSplitDatabase : RoomDatabase() {
     abstract fun partyMemberDao(): PartyMemberDao
     abstract fun splitDao(): SplitDao
     abstract fun settlementDao(): SettlementDao
+    abstract fun recentSearchDao(): RecentSearchDao
 
     companion object {
         @Volatile private var INSTANCE: PaisaSplitDatabase? = null
@@ -49,13 +51,19 @@ abstract class PaisaSplitDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("CREATE TABLE IF NOT EXISTS recent_searches(query TEXT NOT NULL PRIMARY KEY, updatedAt INTEGER NOT NULL)")
+            }
+        }
+
         fun getInstance(context: Context): PaisaSplitDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     PaisaSplitDatabase::class.java,
                     "paisasplit.db"
-                ).addMigrations(MIGRATION_1_2).addCallback(object : RoomDatabase.Callback() {
+                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3).addCallback(object : RoomDatabase.Callback() {
                     override fun onCreate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
                         super.onCreate(db)
                         INSTANCE?.let { database ->

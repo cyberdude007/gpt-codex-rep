@@ -20,4 +20,10 @@ interface CategoryDao {
 
     @Query("SELECT * FROM categories WHERE kind = 'INCOME'")
     fun getIncomeCategories(): Flow<List<CategoryEntity>>
+
+    @Query("SELECT * FROM categories WHERE LOWER(name) LIKE '%' || :needle || '%' LIMIT :limit")
+    suspend fun prefilterByName(needle: String, limit: Int): List<CategoryEntity>
+
+    @Query("SELECT * FROM categories")
+    suspend fun getAllOnce(): List<CategoryEntity>
 }
