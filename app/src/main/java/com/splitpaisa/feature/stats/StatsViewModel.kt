@@ -3,38 +3,82 @@ package com.splitpaisa.feature.stats
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.splitpaisa.data.repo.BudgetBar
+import com.splitpaisa.data.repo.CategorySlice
+import com.splitpaisa.data.repo.MonthPoint
+import com.splitpaisa.data.repo.TxFilter
+import com.splitpaisa.data.repo.TopCat
 import com.splitpaisa.data.repo.TransactionsRepository
+import com.splitpaisa.data.repo.lastNMonthsBounds
+import com.splitpaisa.data.repo.thisMonth
 import com.splitpaisa.di.ServiceLocator
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.launch
-import java.util.Calendar
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.SharingStarted
 
- data class StatsUiState(
-    val totalExpense: Long = 0,
-    val totalIncome: Long = 0
+enum class RangeSelection { THIS_MONTH, LAST_SIX_MONTHS, CUSTOM }
+
+data class StatsUiState(
+    val selection: RangeSelection,
+    val start: Long,
+    val end: Long,
+    val spendByCategory: List<CategorySlice> = emptyList(),
+    val monthlyTrend: List<MonthPoint> = emptyList(),
+    val budgetBars: List<BudgetBar> = emptyList(),
+    val topCategories: List<TopCat> = emptyList(),
 )
 
 class StatsViewModel(private val repository: TransactionsRepository) : ViewModel() {
-    private val _uiState = MutableStateFlow(StatsUiState())
-    val uiState: StateFlow<StatsUiState> = _uiState
+    private val range = MutableStateFlow(thisMonth())
+    private val selection = MutableStateFlow(RangeSelection.THIS_MONTH)
 
-    init {
-        val cal = Calendar.getInstance().apply {
-            set(Calendar.DAY_OF_MONTH, 1)
-            set(Calendar.HOUR_OF_DAY, 0)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-        }
-        val start = cal.timeInMillis
-        cal.add(Calendar.MONTH, 1)
-        val end = cal.timeInMillis
-        viewModelScope.launch {
-            repository.observeMonthSummary(start, end).collect { summary ->
-                _uiState.value = StatsUiState(summary.spentPaise, summary.incomePaise)
-            }
-        }
+    private val spendByCategory = range.flatMapLatest { (s, e) ->
+        repository.observeSpendByCategory(s, e)
+    }
+    private val budget = range.flatMapLatest { (s, e) ->
+        repository.observeBudgetVsActual(s, e)
+    }
+    private val top = range.flatMapLatest { (s, e) ->
+        repository.observeTopCategories(s, e)
+    }
+    private val monthly = repository.observeMonthlySpendIncome(6)
+
+    val uiState: StateFlow<StatsUiState> = combine(
+        range, selection, spendByCategory, monthly, budget, top
+    ) { r, sel, sbc, m, b, t ->
+        StatsUiState(sel, r.first, r.second, sbc, m, b, t)
+    }.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5000),
+        StatsUiState(
+            selection = RangeSelection.THIS_MONTH,
+            start = range.value.first,
+            end = range.value.second,
+        ),
+    )
+
+    fun setThisMonth() {
+        selection.value = RangeSelection.THIS_MONTH
+        range.value = thisMonth()
+    }
+
+    fun setLastSixMonths() {
+        selection.value = RangeSelection.LAST_SIX_MONTHS
+        val bounds = lastNMonthsBounds(6)
+        range.value = bounds.first().start to bounds.last().end
+    }
+
+    fun setCustom(start: Long, end: Long) {
+        selection.value = RangeSelection.CUSTOM
+        range.value = start to end
+    }
+
+    fun filterForCategory(categoryId: String?): TxFilter {
+        val (s, e) = range.value
+        return TxFilter(s, e, categoryId)
     }
 
     companion object {
@@ -48,3 +92,4 @@ class StatsViewModel(private val repository: TransactionsRepository) : ViewModel
             }
     }
 }
+
