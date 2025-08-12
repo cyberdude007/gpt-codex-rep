@@ -24,6 +24,7 @@ data class TransactionEntity(
     val categoryId: String?,
     val accountId: String?,
     val partyId: String?,
+    val payerId: String?,
     val notes: String?,
     val receiptUri: String?,
     val recurringMeta: String?
@@ -37,6 +38,7 @@ data class TransactionEntity(
         categoryId,
         accountId,
         partyId,
+        payerId,
         notes,
         receiptUri,
         recurringMeta
@@ -52,6 +54,7 @@ data class TransactionEntity(
             model.categoryId,
             model.accountId,
             model.partyId,
+            model.payerId,
             model.notes,
             model.receiptUri,
             model.recurringMeta

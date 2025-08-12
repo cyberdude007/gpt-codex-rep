@@ -52,8 +52,8 @@ class DatabaseTest {
 
     @Test
     fun transactionQueries() = runBlocking {
-        val t1 = TransactionEntity("t1", TransactionType.EXPENSE, "Lunch", 5000, 1, "c1", "a1", null, null, null, null)
-        val t2 = TransactionEntity("t2", TransactionType.INCOME, "Salary", 10000, 2, "c2", "a1", null, null, null, null)
+        val t1 = TransactionEntity("t1", TransactionType.EXPENSE, "Lunch", 5000, 1, "c1", "a1", null, null, null, null, null)
+        val t2 = TransactionEntity("t2", TransactionType.INCOME, "Salary", 10000, 2, "c2", "a1", null, null, null, null, null)
         db.transactionDao().upsert(listOf(t1, t2))
 
         val sumExpense = db.transactionDao().sumByTypeInRange("EXPENSE", 0, 5)
@@ -74,7 +74,7 @@ class DatabaseTest {
             PartyMemberEntity("m2", "p1", "B", null)
         )
         db.partyMemberDao().upsert(members)
-        val tx = TransactionEntity("t1", TransactionType.EXPENSE, "Taxi", 1000, 1, null, null, "p1", null, null, null)
+        val tx = TransactionEntity("t1", TransactionType.EXPENSE, "Taxi", 1000, 1, null, null, "p1", null, null, null, null)
         db.transactionDao().upsert(tx)
         db.splitDao().upsert(listOf(
             SplitEntity("s1", "t1", "m1", 500),
