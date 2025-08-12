@@ -8,6 +8,8 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      FORCE_INCLUDE_ANDROID: "true"   # ensures :app is included on CI
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
