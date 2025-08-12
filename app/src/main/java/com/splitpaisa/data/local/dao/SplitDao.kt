@@ -14,4 +14,10 @@ interface SplitDao {
 
     @Query("SELECT * FROM splits WHERE transactionId = :transactionId")
     fun byTransaction(transactionId: String): Flow<List<SplitEntity>>
+
+    @Query("SELECT * FROM splits WHERE transactionId IN (SELECT id FROM transactions WHERE partyId = :partyId)")
+    fun byParty(partyId: String): Flow<List<SplitEntity>>
+
+    @Query("DELETE FROM splits WHERE transactionId = :transactionId")
+    suspend fun deleteByTransaction(transactionId: String)
 }

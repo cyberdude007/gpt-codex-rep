@@ -5,6 +5,8 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.splitpaisa.core.model.*
 import com.splitpaisa.data.local.converter.Converters
 import com.splitpaisa.data.local.dao.*
@@ -24,7 +26,7 @@ import kotlinx.serialization.json.Json
         SplitEntity::class,
         SettlementEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -39,6 +41,13 @@ abstract class PaisaSplitDatabase : RoomDatabase() {
 
     companion object {
         @Volatile private var INSTANCE: PaisaSplitDatabase? = null
+        val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("ALTER TABLE transactions ADD COLUMN payerId TEXT")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_splits_transactionId_memberId ON splits(transactionId, memberId)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_settlements_partyId_payerId_payeeId_atEpochMillis ON settlements(partyId, payerId, payeeId, atEpochMillis)")
+            }
+        }
 
         fun getInstance(context: Context): PaisaSplitDatabase {
             return INSTANCE ?: synchronized(this) {
@@ -46,7 +55,7 @@ abstract class PaisaSplitDatabase : RoomDatabase() {
                     context.applicationContext,
                     PaisaSplitDatabase::class.java,
                     "paisasplit.db"
-                ).addCallback(object : RoomDatabase.Callback() {
+                ).addMigrations(MIGRATION_1_2).addCallback(object : RoomDatabase.Callback() {
                     override fun onCreate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
                         super.onCreate(db)
                         INSTANCE?.let { database ->
