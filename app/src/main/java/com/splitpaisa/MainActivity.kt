@@ -22,36 +22,56 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.splitpaisa.core.ui.PaisaSplitTheme
 import com.splitpaisa.feature.settings.SettingsViewModel
-import com.splitpaisa.feature.settings.ThemeMode
+import com.splitpaisa.core.prefs.ThemeMode
+import com.splitpaisa.core.security.AppLockManager
+import com.splitpaisa.core.prefs.SettingsRepository
+import com.splitpaisa.core.prefs.settingsDataStore
+import kotlinx.coroutines.launch
 import com.splitpaisa.navigation.Destinations
 import com.splitpaisa.navigation.PaisaNavGraph
+import com.splitpaisa.feature.settings.LockScreen
+import androidx.compose.runtime.rememberCoroutineScope
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            val settingsViewModel: SettingsViewModel = viewModel()
+            val settingsViewModel: SettingsViewModel = viewModel(factory = SettingsViewModel.factory(this))
             val settingsState by settingsViewModel.uiState.collectAsState()
-            val darkTheme = when (settingsState.theme) {
+            val darkTheme = when (settingsState.themeMode) {
                 ThemeMode.DARK -> true
                 ThemeMode.LIGHT -> false
                 ThemeMode.SYSTEM -> isSystemInDarkTheme()
             }
+            val lockManager = remember { AppLockManager(this, SettingsRepository(this.settingsDataStore)) }
+            var locked by remember { mutableStateOf(false) }
+            val scope = rememberCoroutineScope()
+            LaunchedEffect(Unit) {
+                locked = lockManager.isLockRequired()
+            }
             PaisaSplitTheme(darkTheme) {
-                val navController = rememberNavController()
-                Scaffold(
-                    bottomBar = { BottomBar(navController) },
-                    floatingActionButton = {
-                        FloatingActionButton(onClick = { navController.navigate(Destinations.Add.route) }) {
-                            Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.add))
+                if (locked) {
+                    LockScreen { pin ->
+                        if (lockManager.verifyPin(pin)) {
+                            scope.launch { lockManager.recordUnlock(); locked = false }
                         }
                     }
-                ) { inner ->
-                    PaisaNavGraph(
-                        navController = navController,
-                        settingsViewModel = settingsViewModel,
-                        modifier = Modifier.padding(inner)
-                    )
+                } else {
+                    val navController = rememberNavController()
+                    Scaffold(
+                        bottomBar = { BottomBar(navController) },
+                        floatingActionButton = {
+                            FloatingActionButton(onClick = { navController.navigate(Destinations.Add.route) }) {
+                                Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.add))
+                            }
+                        }
+                    ) { inner ->
+                        PaisaNavGraph(
+                            navController = navController,
+                            settingsViewModel = settingsViewModel,
+                            modifier = Modifier.padding(inner)
+                        )
+                    }
                 }
             }
         }
