@@ -1,9 +1,3 @@
-package com.splitpaisa.data.local.dao
-
-import androidx.room.Dao
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.Query
 import com.splitpaisa.data.local.entity.TransactionEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -139,4 +133,3 @@ data class TopCatEntity(
     val color: String,
     val spendPaise: Long,
 )
-

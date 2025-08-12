@@ -8,6 +8,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.navArgument
 import com.splitpaisa.feature.add.AddScreen
 import com.splitpaisa.feature.add.AddViewModel
@@ -52,6 +53,7 @@ fun PaisaNavGraph(
         composable(Destinations.Stats.route) {
             val context = LocalContext.current
             val vm: StatsViewModel = viewModel(factory = StatsViewModel.factory(context))
+            StatsScreen(vm)
             StatsScreen(vm) { filter ->
                 val category = filter.categoryId ?: ""
                 navController.navigate("${Destinations.Filtered.route}?start=${filter.start}&end=${filter.end}&categoryId=${category}")
