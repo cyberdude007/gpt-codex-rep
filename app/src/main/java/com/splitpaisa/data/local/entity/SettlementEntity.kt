@@ -8,10 +8,7 @@ import com.splitpaisa.core.model.Settlement
 @Entity(
     tableName = "settlements",
     indices = [
-        Index(value = ["partyId"]),
-        Index(value = ["payerId"]),
-        Index(value = ["payeeId"]),
-        Index(value = ["atEpochMillis"])
+        Index(value = ["partyId", "payerId", "payeeId", "atEpochMillis"])
     ]
 )
 data class SettlementEntity(

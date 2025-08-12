@@ -21,22 +21,18 @@ jobs:
         with:
           gradle-version: 8.11.1
       - name: Lint & Unit tests
-        run: gradle :app:lint :app:testDebugUnitTest --no-daemon --stacktrace
+        run: ./gradlew :app:lint :app:testDebugUnitTest --no-daemon --stacktrace
       - name: Build debug APK
-        run: gradle :app:assembleDebug --no-daemon --stacktrace
-      - name: Prepare artifact
-        run: |
-          mkdir -p dist
-          cp app/build/outputs/apk/debug/*.apk dist/
+        run: ./gradlew :app:assembleDebug -PversionCodeOverride=${{ github.run_number }} --no-daemon --stacktrace
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: paisasplit-debug-apk
-          path: dist/*.apk
+          path: app/build/outputs/**/*.apk
       - name: Publish APK to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: debug-${{ github.run_id }}
           name: "SplitPaisa Debug #${{ github.run_number }}"
           prerelease: true
-          files: dist/*.apk
+          files: app/build/outputs/**/*.apk
