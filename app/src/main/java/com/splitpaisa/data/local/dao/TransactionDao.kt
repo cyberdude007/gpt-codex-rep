@@ -26,4 +26,7 @@ interface TransactionDao {
 
     @Query("SELECT * FROM transactions WHERE atEpochMillis BETWEEN :start AND :end ORDER BY atEpochMillis DESC")
     fun byMonth(start: Long, end: Long): Flow<List<TransactionEntity>>
+
+    @Query("SELECT * FROM transactions WHERE partyId = :partyId")
+    fun byParty(partyId: String): Flow<List<TransactionEntity>>
 }

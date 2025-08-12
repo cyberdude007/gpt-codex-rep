@@ -13,8 +13,8 @@ android {
     applicationId = "com.splitpaisa"
     minSdk = 24
     targetSdk = 34
-    versionCode = 1
-    versionName = "0.1"
+    versionCode = project.findProperty("versionCodeOverride")?.toString()?.toInt() ?: 100
+    versionName = "0.3.0"
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
 
@@ -30,6 +30,25 @@ android {
   }
   kotlinOptions {
     jvmTarget = "17"
+  }
+
+  buildTypes {
+    debug {
+      applicationIdSuffix = ".debug"
+      isDebuggable = true
+    }
+  }
+
+  splits {
+    abi {
+      isEnable = false
+    }
+  }
+
+  packaging {
+    resources {
+      excludes += listOf("/META-INF/{AL2.0,LGPL2.1}", "LICENSE*", "LICENSE.txt")
+    }
   }
 }
 
@@ -63,6 +82,7 @@ dependencies {
   testImplementation("androidx.test:core:1.5.0")
   testImplementation("org.robolectric:robolectric:4.11.1")
   testImplementation("androidx.room:room-testing:$roomVersion")
+  testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
   androidTestImplementation("androidx.test.ext:junit:1.1.5")
   androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
 }

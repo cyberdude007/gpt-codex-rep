@@ -8,8 +8,7 @@ import com.splitpaisa.core.model.Split
 @Entity(
     tableName = "splits",
     indices = [
-        Index(value = ["transactionId"]),
-        Index(value = ["memberId"])
+        Index(value = ["transactionId", "memberId"])
     ]
 )
 data class SplitEntity(
