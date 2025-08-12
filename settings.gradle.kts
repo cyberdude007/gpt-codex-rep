@@ -1,3 +1,5 @@
+// settings.gradle.kts
+
 pluginManagement {
     repositories {
         google()
@@ -15,17 +17,24 @@ dependencyResolutionManagement {
 
 rootProject.name = "PaisaSplit"
 
-// Include :app only if we're on CI or an Android SDK is present locally.
-// This keeps the Codex terminal from failing on startup when no SDK exists.
-fun hasAndroidSdk(): Boolean =
-    System.getenv("ANDROID_HOME") != null ||
-    System.getenv("ANDROID_SDK_ROOT") != null ||
-    file("local.properties").exists()
+// --- Robust Android SDK detection & toggles ---
+
+fun envDir(name: String): java.io.File? =
+    System.getenv(name)?.let { java.io.File(it) }?.takeIf { it.isDirectory }
 
 val isCI = System.getenv("CI")?.isNotBlank() == true
+val forceInclude = System.getenv("FORCE_INCLUDE_ANDROID") == "true"
+val skipAndroid = System.getenv("SKIP_ANDROID") == "true"
 
-if (isCI || hasAndroidSdk()) {
-    include(":app")
-} else {
-    println("Android SDK not found; skipping :app (Codex env).")
+when {
+    skipAndroid -> {
+        println("SKIP_ANDROID=true → Skipping ':app' for this environment.")
+    }
+    forceInclude || isCI -> {
+        include(":app")
+        println("Including ':app' (forceInclude=$forceInclude, isCI=$isCI)")
+    }
+    else -> {
+        println("Android SDK not found; skipping ':app' (Codex env).")
+    }
 }
