@@ -24,6 +24,7 @@ import java.util.UUID
 interface PartiesRepository {
     fun observeParties(): Flow<List<PartyWithMembersBasic>>
     fun getMembers(partyId: String): Flow<List<PartyMember>>
+    fun searchMembers(query: String, excludeIds: Set<String> = emptySet(), limit: Int = 20): Flow<List<PartyMember>>
     suspend fun addParty(name: String, members: List<PartyMember>)
     fun observePartyBalances(partyId: String): Flow<Balances>
     suspend fun addSettlement(
@@ -62,11 +63,31 @@ class PartiesRepositoryImpl(
     override fun getMembers(partyId: String): Flow<List<PartyMember>> =
         memberDao.byParty(partyId).map { members -> members.map { it.toModel() } }
 
+    override fun searchMembers(query: String, excludeIds: Set<String>, limit: Int): Flow<List<PartyMember>> =
+        kotlinx.coroutines.flow.flow {
+            if (query.isBlank()) {
+                emit(emptyList())
+            } else {
+                val needle = com.splitpaisa.core.search.TextNormalizer.normalize(query)
+                val pre = memberDao.search(needle, limit * 5)
+                val candidates = pre.map { it.toModel() }.filterNot { excludeIds.contains(it.id) }
+                val ranked = candidates.map { it to com.splitpaisa.core.search.Fuzzy.rank(query, it.displayName) }
+                    .sortedWith(
+                        compareByDescending<Pair<PartyMember, Int>> { it.second }
+                            .thenBy { it.first.displayName.length }
+                            .thenBy { it.first.displayName }
+                    ).take(limit).map { it.first }
+                emit(ranked)
+            }
+        }
+
     override suspend fun addParty(name: String, members: List<PartyMember>) {
         val partyId = UUID.randomUUID().toString()
         val party = PartyEntity(partyId, name, System.currentTimeMillis())
         partyDao.upsert(party)
-        memberDao.upsert(members.map { PartyMemberEntity(it.id, partyId, it.displayName, it.contact) })
+        memberDao.upsert(members.map {
+            PartyMemberEntity(it.id, partyId, it.displayName, it.contact, com.splitpaisa.core.search.TextNormalizer.normalize(it.displayName))
+        })
     }
 
     override fun observePartyBalances(partyId: String): Flow<Balances> =

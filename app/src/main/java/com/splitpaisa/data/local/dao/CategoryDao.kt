@@ -20,4 +20,7 @@ interface CategoryDao {
 
     @Query("SELECT * FROM categories WHERE kind = 'INCOME'")
     fun getIncomeCategories(): Flow<List<CategoryEntity>>
+
+    @Query("SELECT * FROM categories WHERE normalizedName LIKE '%' || :needle || '%' OR LOWER(name) LIKE '%' || :needle || '%' LIMIT :limit")
+    suspend fun search(needle: String, limit: Int): List<CategoryEntity>
 }

@@ -34,4 +34,12 @@ object ServiceLocator {
             db(context).splitDao(),
             db(context).settlementDao()
         )
+
+    fun searchRepository(context: Context): SearchRepository =
+        SearchRepositoryImpl(
+            db(context).categoryDao(),
+            db(context).partyDao(),
+            db(context).transactionDao(),
+            db(context).recentSearchDao(),
+        )
 }
