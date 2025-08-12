@@ -1,6 +1,7 @@
 package com.splitpaisa.feature.stats
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -14,11 +15,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Button
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -26,6 +32,9 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import com.splitpaisa.data.repo.CategorySlice
 import com.splitpaisa.data.repo.TxFilter
 import com.splitpaisa.data.repo.lastNMonthsBounds
@@ -41,6 +50,9 @@ fun StatsScreen(viewModel: StatsViewModel, onNavigate: (TxFilter) -> Unit = {}) 
             currency = Currency.getInstance("INR")
         }
     }
+    val showStart = remember { mutableStateOf(false) }
+    val showEnd = remember { mutableStateOf(false) }
+    val tempStart = remember { mutableStateOf<Long?>(null) }
 
     LazyColumn(
         modifier = Modifier.padding(16.dp),
@@ -50,6 +62,7 @@ fun StatsScreen(viewModel: StatsViewModel, onNavigate: (TxFilter) -> Unit = {}) 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(onClick = viewModel::setThisMonth, enabled = state.selection != RangeSelection.THIS_MONTH) { Text("This Month") }
                 Button(onClick = viewModel::setLastSixMonths, enabled = state.selection != RangeSelection.LAST_SIX_MONTHS) { Text("Last 6") }
+                Button(onClick = { showStart.value = true }, enabled = state.selection != RangeSelection.CUSTOM) { Text("Custom") }
             }
         }
         item {
@@ -57,7 +70,7 @@ fun StatsScreen(viewModel: StatsViewModel, onNavigate: (TxFilter) -> Unit = {}) 
             if (state.spendByCategory.isEmpty()) {
                 Text("No expenses in this range.")
             } else {
-                SpendByCategoryChart(state.spendByCategory) { cat ->
+                SpendByCategoryChart(state.spendByCategory, formatter) { cat ->
                     onNavigate(viewModel.filterForCategory(cat))
                 }
             }
@@ -112,30 +125,94 @@ fun StatsScreen(viewModel: StatsViewModel, onNavigate: (TxFilter) -> Unit = {}) 
             }
         }
     }
+
+    if (showStart.value) {
+        val dpState = rememberDatePickerState()
+        DatePickerDialog(onDismissRequest = { showStart.value = false }, confirmButton = {
+            TextButton(onClick = {
+                val sel = dpState.selectedDateMillis
+                if (sel != null) {
+                    tempStart.value = sel
+                    showStart.value = false
+                    showEnd.value = true
+                }
+            }) { Text("OK") }
+        }, dismissButton = {
+            TextButton(onClick = { showStart.value = false }) { Text("Cancel") }
+        }) {
+            DatePicker(state = dpState)
+        }
+    }
+    if (showEnd.value) {
+        val dpState = rememberDatePickerState()
+        DatePickerDialog(onDismissRequest = { showEnd.value = false }, confirmButton = {
+            TextButton(onClick = {
+                val sel = dpState.selectedDateMillis
+                val start = tempStart.value
+                if (sel != null && start != null) {
+                    val endExclusive = sel + 24L * 60 * 60 * 1000
+                    viewModel.setCustom(start, endExclusive)
+                    showEnd.value = false
+                }
+            }) { Text("OK") }
+        }, dismissButton = {
+            TextButton(onClick = { showEnd.value = false }) { Text("Cancel") }
+        }) {
+            DatePicker(state = dpState)
+        }
+    }
 }
 
 @Composable
-private fun SpendByCategoryChart(data: List<CategorySlice>, onSlice: (String?) -> Unit) {
+private fun SpendByCategoryChart(data: List<CategorySlice>, formatter: NumberFormat, onSlice: (String?) -> Unit) {
     val total = data.sumOf { it.spendPaise }
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Canvas(modifier = Modifier.size(160.dp)) {
-            var startAngle = -90f
-            data.forEach { slice ->
-                val sweep = if (total == 0L) 0f else (slice.spendPaise.toFloat() / total) * 360f
-                drawArc(
-                    color = Color(android.graphics.Color.parseColor(slice.color)),
-                    startAngle = startAngle,
-                    sweepAngle = sweep,
-                    useCenter = true,
-                )
-                startAngle += sweep
+        Box(contentAlignment = Alignment.Center) {
+            Canvas(
+                modifier = Modifier
+                    .size(160.dp)
+                    .pointerInput(data) {
+                        detectTapGestures { offset ->
+                            val center = size / 2f
+                            val dx = offset.x - center.width
+                            val dy = offset.y - center.height
+                            var angle = Math.toDegrees(kotlin.math.atan2(dy.toDouble(), dx.toDouble())).toFloat()
+                            angle = (angle + 450f) % 360f
+                            var start = 0f
+                            data.forEach { slice ->
+                                val sweep = if (total == 0L) 0f else (slice.spendPaise.toFloat() / total) * 360f
+                                if (angle >= start && angle < start + sweep) {
+                                    onSlice(slice.categoryId)
+                                    return@detectTapGestures
+                                }
+                                start += sweep
+                            }
+                        }
+                    }
+            ) {
+                var startAngle = -90f
+                val stroke = androidx.compose.ui.graphics.drawscope.Stroke(width = 40f)
+                data.forEach { slice ->
+                    val sweep = if (total == 0L) 0f else (slice.spendPaise.toFloat() / total) * 360f
+                    drawArc(
+                        color = Color(android.graphics.Color.parseColor(slice.color)),
+                        startAngle = startAngle,
+                        sweepAngle = sweep,
+                        useCenter = false,
+                        style = stroke,
+                    )
+                    startAngle += sweep
+                }
             }
+            Text(formatter.format(total / 100.0))
         }
         Spacer(Modifier.height(8.dp))
         data.forEach { slice ->
+            val percent = if (total == 0L) 0 else (slice.spendPaise * 100 / total).toInt()
             Row(
                 modifier = Modifier
                     .clickable { onSlice(slice.categoryId) }
+                    .semantics { contentDescription = "${slice.name}, ${formatter.format(slice.spendPaise / 100.0)}, ${percent}%" }
                     .padding(vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -144,7 +221,7 @@ private fun SpendByCategoryChart(data: List<CategorySlice>, onSlice: (String?) -
                         .size(12.dp)
                         .background(Color(android.graphics.Color.parseColor(slice.color)))
                 )
-                Text(slice.name, modifier = Modifier.padding(start = 8.dp))
+                Text("${slice.name} (${percent}%)", modifier = Modifier.padding(start = 8.dp))
             }
         }
     }
