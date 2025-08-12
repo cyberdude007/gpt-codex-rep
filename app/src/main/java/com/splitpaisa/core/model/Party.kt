@@ -6,11 +6,13 @@ import kotlinx.serialization.Serializable
 data class Party(
     val id: String,
     val name: String,
-    val members: List<Member>
+    val createdAt: Long
 )
 
 @Serializable
-data class Member(
+data class PartyMember(
     val id: String,
-    val name: String
+    val partyId: String,
+    val displayName: String,
+    val contact: String? = null
 )
