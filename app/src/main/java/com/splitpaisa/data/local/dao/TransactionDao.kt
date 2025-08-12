@@ -111,4 +111,3 @@ interface TransactionDao {
     )
     suspend fun searchTransactions(needle: String, limit: Int): List<TransactionEntity>
 }
-
