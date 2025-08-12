@@ -10,6 +10,7 @@ import com.splitpaisa.data.local.entity.PartyEntity
 import com.splitpaisa.data.local.entity.PartyMemberEntity
 import com.splitpaisa.data.local.entity.SplitEntity
 import com.splitpaisa.data.local.entity.TransactionEntity
+import com.splitpaisa.core.search.TextNormalizer
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -39,7 +40,7 @@ class DatabaseTest {
     @Test
     fun accountAndCategoryRoundTrip() = runBlocking {
         db.accountDao().insertAll(listOf(AccountEntity("a1", "Wallet", "CASH")))
-        db.categoryDao().upsert(listOf(CategoryEntity("c1", "Food", TransactionType.EXPENSE, "ic", "#fff", null)))
+        db.categoryDao().upsert(listOf(CategoryEntity("c1", "Food", TransactionType.EXPENSE, "ic", "#fff", null, TextNormalizer.normalize("Food"))))
 
         val accounts = db.accountDao().getAll().first()
         val categories = db.categoryDao().getAll().first()
@@ -70,8 +71,8 @@ class DatabaseTest {
         val party = PartyEntity("p1", "Trip", 0)
         db.partyDao().upsert(party)
         val members = listOf(
-            PartyMemberEntity("m1", "p1", "A", null),
-            PartyMemberEntity("m2", "p1", "B", null)
+            PartyMemberEntity("m1", "p1", "A", null, TextNormalizer.normalize("A")),
+            PartyMemberEntity("m2", "p1", "B", null, TextNormalizer.normalize("B"))
         )
         db.partyMemberDao().upsert(members)
         val tx = TransactionEntity("t1", TransactionType.EXPENSE, "Taxi", 1000, 1, null, null, "p1", null, null, null, null)

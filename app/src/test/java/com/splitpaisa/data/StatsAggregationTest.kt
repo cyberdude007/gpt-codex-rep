@@ -5,6 +5,7 @@ import androidx.test.core.app.ApplicationProvider
 import com.splitpaisa.core.model.TransactionType
 import com.splitpaisa.data.local.db.PaisaSplitDatabase
 import com.splitpaisa.data.local.entity.CategoryEntity
+import com.splitpaisa.core.search.TextNormalizer
 import com.splitpaisa.data.local.entity.TransactionEntity
 import com.splitpaisa.data.repo.TransactionsRepository
 import com.splitpaisa.data.repo.TransactionsRepositoryImpl
@@ -45,8 +46,8 @@ class StatsAggregationTest {
 
     @Test
     fun spendByCategory_sumsAndSorts() = runBlocking {
-        val food = CategoryEntity("c1", "Food", TransactionType.EXPENSE, "ic", "#ff0000", null)
-        val travel = CategoryEntity("c2", "Travel", TransactionType.EXPENSE, "ic", "#00ff00", null)
+        val food = CategoryEntity("c1", "Food", TransactionType.EXPENSE, "ic", "#ff0000", null, TextNormalizer.normalize("Food"))
+        val travel = CategoryEntity("c2", "Travel", TransactionType.EXPENSE, "ic", "#00ff00", null, TextNormalizer.normalize("Travel"))
         db.categoryDao().upsert(listOf(food, travel))
         val (start, end) = lastNMonthsBounds(1).first().run { start to end }
         db.transactionDao().upsert(listOf(
@@ -61,7 +62,7 @@ class StatsAggregationTest {
     @Test
     fun monthlyTrend_gapFilled() = runBlocking {
         val bounds = lastNMonthsBounds(3)
-        val food = CategoryEntity("c1", "Food", TransactionType.EXPENSE, "ic", "#ff0000", null)
+        val food = CategoryEntity("c1", "Food", TransactionType.EXPENSE, "ic", "#ff0000", null, TextNormalizer.normalize("Food"))
         db.categoryDao().upsert(listOf(food))
         db.transactionDao().upsert(
             TransactionEntity("t1", TransactionType.EXPENSE, "A", 1000, bounds[0].start + 1, "c1", null, null, null, null, null, null)
@@ -74,7 +75,7 @@ class StatsAggregationTest {
 
     @Test
     fun budgetVsActual_basic() = runBlocking {
-        val cat = CategoryEntity("c1", "Food", TransactionType.EXPENSE, "ic", "#ff0000", 2000)
+        val cat = CategoryEntity("c1", "Food", TransactionType.EXPENSE, "ic", "#ff0000", 2000, TextNormalizer.normalize("Food"))
         db.categoryDao().upsert(listOf(cat))
         val (start, end) = lastNMonthsBounds(1).first().run { start to end }
         db.transactionDao().upsert(
@@ -87,9 +88,9 @@ class StatsAggregationTest {
 
     @Test
     fun topCategories_limit() = runBlocking {
-        val food = CategoryEntity("c1", "Food", TransactionType.EXPENSE, "ic", "#ff0000", null)
-        val travel = CategoryEntity("c2", "Travel", TransactionType.EXPENSE, "ic", "#00ff00", null)
-        val rent = CategoryEntity("c3", "Rent", TransactionType.EXPENSE, "ic", "#0000ff", null)
+        val food = CategoryEntity("c1", "Food", TransactionType.EXPENSE, "ic", "#ff0000", null, TextNormalizer.normalize("Food"))
+        val travel = CategoryEntity("c2", "Travel", TransactionType.EXPENSE, "ic", "#00ff00", null, TextNormalizer.normalize("Travel"))
+        val rent = CategoryEntity("c3", "Rent", TransactionType.EXPENSE, "ic", "#0000ff", null, TextNormalizer.normalize("Rent"))
         db.categoryDao().upsert(listOf(food, travel, rent))
         val (start, end) = lastNMonthsBounds(1).first().run { start to end }
         db.transactionDao().upsert(listOf(
