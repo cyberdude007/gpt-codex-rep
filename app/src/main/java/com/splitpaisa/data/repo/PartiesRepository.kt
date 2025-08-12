@@ -18,12 +18,16 @@ import com.splitpaisa.data.local.entity.SplitEntity
 import com.splitpaisa.data.local.entity.TransactionEntity
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
+import com.splitpaisa.core.search.Fuzzy
+import com.splitpaisa.core.search.TextNormalizer
 import java.util.UUID
 
 interface PartiesRepository {
     fun observeParties(): Flow<List<PartyWithMembersBasic>>
     fun getMembers(partyId: String): Flow<List<PartyMember>>
+    fun searchMembers(query: String, limit: Int = 20): Flow<List<PartyMember>>
     suspend fun addParty(name: String, members: List<PartyMember>)
     fun observePartyBalances(partyId: String): Flow<Balances>
     suspend fun addSettlement(
@@ -61,6 +65,24 @@ class PartiesRepositoryImpl(
 
     override fun getMembers(partyId: String): Flow<List<PartyMember>> =
         memberDao.byParty(partyId).map { members -> members.map { it.toModel() } }
+
+    override fun searchMembers(query: String, limit: Int): Flow<List<PartyMember>> = flow {
+        val needle = TextNormalizer.normalize(query)
+        if (needle.isBlank()) {
+            emit(emptyList())
+        } else {
+            val candidates = memberDao.prefilterMembers(needle, limit * 5)
+            val qTokens = TextNormalizer.tokenize(needle)
+            val ranked = candidates.map { member ->
+                val score = Fuzzy.rankTokens(qTokens, TextNormalizer.tokenize(member.displayName))
+                member to score
+            }.sortedWith(compareBy<Pair<PartyMemberEntity, Int>> { it.second }
+                .thenBy { it.first.displayName.length }
+                .thenBy { it.first.displayName })
+                .take(limit)
+            emit(ranked.map { it.first.toModel() })
+        }
+    }
 
     override suspend fun addParty(name: String, members: List<PartyMember>) {
         val partyId = UUID.randomUUID().toString()

@@ -23,8 +23,6 @@ import androidx.navigation.compose.rememberNavController
 import com.splitpaisa.core.ui.PaisaSplitTheme
 import com.splitpaisa.feature.settings.SettingsViewModel
 import com.splitpaisa.feature.settings.ThemeMode
-import com.splitpaisa.navigation.Destinations
-import com.splitpaisa.navigation.PaisaNavGraph
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

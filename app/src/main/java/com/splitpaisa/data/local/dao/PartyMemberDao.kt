@@ -14,4 +14,7 @@ interface PartyMemberDao {
 
     @Query("SELECT * FROM party_members WHERE partyId = :partyId")
     fun byParty(partyId: String): Flow<List<PartyMemberEntity>>
+
+    @Query("SELECT * FROM party_members WHERE LOWER(displayName) LIKE '%' || :needle || '%' LIMIT :limit")
+    suspend fun prefilterMembers(needle: String, limit: Int): List<PartyMemberEntity>
 }

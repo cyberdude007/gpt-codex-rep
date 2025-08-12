@@ -29,4 +29,86 @@ interface TransactionDao {
 
     @Query("SELECT * FROM transactions WHERE partyId = :partyId")
     fun byParty(partyId: String): Flow<List<TransactionEntity>>
+
+    @Query(
+        """
+        SELECT t.categoryId AS categoryId, c.name AS name, c.color AS color, SUM(t.amountPaise) AS spendPaise
+        FROM transactions t JOIN categories c ON c.id = t.categoryId
+        WHERE t.type = 'EXPENSE' AND t.atEpochMillis BETWEEN :start AND :end
+        GROUP BY t.categoryId
+        ORDER BY spendPaise DESC
+        """
+    )
+    fun spendByCategory(start: Long, end: Long): Flow<List<CategorySliceRow>>
+
+    @Query(
+        """
+        SELECT year, month,
+               SUM(CASE WHEN type='EXPENSE' THEN amountPaise ELSE 0 END) AS spendPaise,
+               SUM(CASE WHEN type='INCOME' THEN amountPaise ELSE 0 END) AS incomePaise
+        FROM (
+            SELECT strftime('%Y', datetime(t.atEpochMillis/1000,'unixepoch')) AS year,
+                   strftime('%m', datetime(t.atEpochMillis/1000,'unixepoch')) AS month,
+                   t.type, t.amountPaise
+            FROM transactions t
+            WHERE t.atEpochMillis BETWEEN :start AND :end
+        )
+        GROUP BY year, month
+        ORDER BY year, month
+        """
+    )
+    fun monthlyTrend(start: Long, end: Long): Flow<List<MonthTrendRow>>
+
+    @Query(
+        """
+        SELECT c.id AS categoryId, c.name AS name,
+               COALESCE(c.monthlyBudgetPaise,0) AS budgetPaise,
+               COALESCE(SUM(t.amountPaise),0) AS actualPaise
+        FROM categories c
+        LEFT JOIN transactions t ON t.categoryId = c.id
+             AND t.type='EXPENSE'
+             AND t.atEpochMillis BETWEEN :start AND :end
+        WHERE c.monthlyBudgetPaise IS NOT NULL
+        GROUP BY c.id
+        ORDER BY actualPaise DESC
+        """
+    )
+    fun budgetVsActual(start: Long, end: Long): Flow<List<BudgetBarRow>>
+
+    @Query(
+        """
+        SELECT t.categoryId AS categoryId, c.name AS name, c.color AS color, SUM(t.amountPaise) AS spendPaise
+        FROM transactions t JOIN categories c ON c.id = t.categoryId
+        WHERE t.type = 'EXPENSE' AND t.atEpochMillis BETWEEN :start AND :end
+        GROUP BY t.categoryId
+        ORDER BY spendPaise DESC
+        LIMIT :limit
+        """
+    )
+    fun topCategories(start: Long, end: Long, limit: Int): Flow<List<TopCatRow>>
+
+    @Query(
+        """
+        SELECT * FROM transactions
+        WHERE atEpochMillis BETWEEN :start AND :end
+          AND (:categoryId IS NULL OR categoryId = :categoryId)
+        ORDER BY atEpochMillis DESC
+        """
+    )
+    fun listTransactions(start: Long, end: Long, categoryId: String?): Flow<List<TransactionEntity>>
+
+    @Query(
+        """
+        SELECT t.* FROM transactions t
+        LEFT JOIN categories c ON c.id = t.categoryId
+        LEFT JOIN parties p ON p.id = t.partyId
+        WHERE LOWER(t.title) LIKE '%' || :needle || '%'
+           OR LOWER(c.name) LIKE '%' || :needle || '%'
+           OR LOWER(p.name) LIKE '%' || :needle || '%'
+        ORDER BY t.atEpochMillis DESC
+        LIMIT :limit
+        """
+    )
+    suspend fun searchTransactions(needle: String, limit: Int): List<TransactionEntity>
 }
+
