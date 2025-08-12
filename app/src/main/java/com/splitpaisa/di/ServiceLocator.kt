@@ -18,8 +18,20 @@ object ServiceLocator {
         CategoriesRepositoryImpl(db(context).categoryDao())
 
     fun transactionsRepository(context: Context): TransactionsRepository =
-        TransactionsRepositoryImpl(db(context).transactionDao(), db(context).categoryDao(), db(context).partyDao())
+        TransactionsRepositoryImpl(
+            db(context),
+            db(context).transactionDao(),
+            db(context).categoryDao(),
+            db(context).partyDao(),
+            db(context).splitDao()
+        )
 
     fun partiesRepository(context: Context): PartiesRepository =
-        PartiesRepositoryImpl(db(context).partyDao(), db(context).partyMemberDao())
+        PartiesRepositoryImpl(
+            db(context).partyDao(),
+            db(context).partyMemberDao(),
+            db(context).transactionDao(),
+            db(context).splitDao(),
+            db(context).settlementDao()
+        )
 }

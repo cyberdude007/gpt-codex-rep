@@ -12,6 +12,7 @@ data class Transaction(
     val categoryId: String? = null,
     val accountId: String? = null,
     val partyId: String? = null,
+    val payerId: String? = null,
     val notes: String? = null,
     val receiptUri: String? = null,
     val recurringMeta: String? = null
