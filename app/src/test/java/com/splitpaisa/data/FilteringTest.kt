@@ -5,6 +5,7 @@ import androidx.test.core.app.ApplicationProvider
 import com.splitpaisa.core.model.TransactionType
 import com.splitpaisa.data.local.db.PaisaSplitDatabase
 import com.splitpaisa.data.local.entity.CategoryEntity
+import com.splitpaisa.core.search.TextNormalizer
 import com.splitpaisa.data.local.entity.TransactionEntity
 import com.splitpaisa.data.repo.TxFilter
 import com.splitpaisa.data.repo.TransactionsRepository
@@ -44,8 +45,8 @@ class FilteringTest {
 
     @Test
     fun listTransactions_filtersByCategoryAndDate() = runBlocking {
-        val cat1 = CategoryEntity("c1", "Food", TransactionType.EXPENSE, "ic", "#ff0000", null)
-        val cat2 = CategoryEntity("c2", "Travel", TransactionType.EXPENSE, "ic", "#00ff00", null)
+        val cat1 = CategoryEntity("c1", "Food", TransactionType.EXPENSE, "ic", "#ff0000", null, TextNormalizer.normalize("Food"))
+        val cat2 = CategoryEntity("c2", "Travel", TransactionType.EXPENSE, "ic", "#00ff00", null, TextNormalizer.normalize("Travel"))
         db.categoryDao().upsert(listOf(cat1, cat2))
         val bounds = lastNMonthsBounds(1).first()
         db.transactionDao().upsert(listOf(

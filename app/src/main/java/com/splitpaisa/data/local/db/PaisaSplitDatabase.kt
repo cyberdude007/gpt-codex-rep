@@ -24,9 +24,10 @@ import kotlinx.serialization.json.Json
         PartyEntity::class,
         PartyMemberEntity::class,
         SplitEntity::class,
-        SettlementEntity::class
+        SettlementEntity::class,
+        RecentSearchEntity::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -38,6 +39,7 @@ abstract class PaisaSplitDatabase : RoomDatabase() {
     abstract fun partyMemberDao(): PartyMemberDao
     abstract fun splitDao(): SplitDao
     abstract fun settlementDao(): SettlementDao
+    abstract fun recentSearchDao(): RecentSearchDao
 
     companion object {
         @Volatile private var INSTANCE: PaisaSplitDatabase? = null
@@ -49,13 +51,25 @@ abstract class PaisaSplitDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("ALTER TABLE party_members ADD COLUMN normalizedName TEXT NOT NULL DEFAULT ''")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_party_members_normalizedName ON party_members(normalizedName)")
+                database.execSQL("UPDATE party_members SET normalizedName = LOWER(displayName)")
+                database.execSQL("ALTER TABLE categories ADD COLUMN normalizedName TEXT NOT NULL DEFAULT ''")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_categories_normalizedName ON categories(normalizedName)")
+                database.execSQL("UPDATE categories SET normalizedName = LOWER(name)")
+                database.execSQL("CREATE TABLE IF NOT EXISTS recent_searches(query TEXT NOT NULL PRIMARY KEY, updatedAt INTEGER NOT NULL)")
+            }
+        }
+
         fun getInstance(context: Context): PaisaSplitDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     PaisaSplitDatabase::class.java,
                     "paisasplit.db"
-                ).addMigrations(MIGRATION_1_2).addCallback(object : RoomDatabase.Callback() {
+                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3).addCallback(object : RoomDatabase.Callback() {
                     override fun onCreate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
                         super.onCreate(db)
                         INSTANCE?.let { database ->
@@ -81,7 +95,7 @@ abstract class PaisaSplitDatabase : RoomDatabase() {
             val party = PartyEntity(seed.party.id, seed.party.name, System.currentTimeMillis())
             partyDao().upsert(party)
             partyMemberDao().upsert(seed.party.members.map {
-                PartyMemberEntity(it.id, party.id, it.name, null)
+                PartyMemberEntity(it.id, party.id, it.name, null, com.splitpaisa.core.search.TextNormalizer.normalize(it.name))
             })
             transactionDao().upsert(seed.transactions.map { TransactionEntity.from(it) })
         }

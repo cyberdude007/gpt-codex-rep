@@ -30,6 +30,9 @@ interface TransactionDao {
     @Query("SELECT * FROM transactions WHERE partyId = :partyId")
     fun byParty(partyId: String): Flow<List<TransactionEntity>>
 
+    @Query("SELECT * FROM transactions WHERE LOWER(title) LIKE '%' || :needle || '%' LIMIT :limit")
+    suspend fun search(needle: String, limit: Int): List<TransactionEntity>
+
     @Query(
         """
         SELECT t.categoryId AS categoryId, c.name AS name, c.color AS color, SUM(t.amountPaise) AS spendPaise

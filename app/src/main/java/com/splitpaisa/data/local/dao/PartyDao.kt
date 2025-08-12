@@ -20,4 +20,7 @@ interface PartyDao {
     @Transaction
     @Query("SELECT * FROM parties")
     fun getPartiesWithMembers(): Flow<List<PartyWithMembers>>
+
+    @Query("SELECT * FROM parties WHERE LOWER(name) LIKE '%' || :needle || '%' LIMIT :limit")
+    suspend fun search(needle: String, limit: Int): List<PartyEntity>
 }
